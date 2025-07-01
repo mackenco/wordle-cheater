@@ -9,7 +9,7 @@ import {
   SafeAreaView,
   Alert,
 } from 'react-native';
-import { Search, RotateCcw } from 'lucide-react-native';
+import { Search, RotateCcw, ChevronDown, ChevronUp } from 'lucide-react-native';
 import { wordList } from '@/data/wordList';
 
 type LetterState = 'normal' | 'excluded' | 'included';
@@ -27,6 +27,7 @@ const QWERTY_ROWS = [
 export default function WordleCheater() {
   const [pattern, setPattern] = useState('');
   const [letterStates, setLetterStates] = useState<LetterStates>({});
+  const [keyboardExpanded, setKeyboardExpanded] = useState(true);
 
   const excludedLetters = useMemo(() => {
     return Object.keys(letterStates)
@@ -107,6 +108,7 @@ export default function WordleCheater() {
   const clearAll = () => {
     setPattern('');
     setLetterStates({});
+    setKeyboardExpanded(true); // Expand keyboard when clearing to help user start fresh
   };
 
   const handlePatternChange = (text: string) => {
@@ -116,9 +118,42 @@ export default function WordleCheater() {
       .replace(/[^a-z?]/g, '')
       .slice(0, 5);
     setPattern(cleaned);
+
+    // Auto-include letters from the pattern and clean up removed ones
+    const patternLetters = cleaned.replace(/\?/g, '').split('');
+    const previousPatternLetters = pattern.replace(/\?/g, '').split('');
+
+    setLetterStates(prev => {
+      const newStates = { ...prev };
+
+      // Add new pattern letters as included
+      patternLetters.forEach(letter => {
+        if (letter.match(/[a-z]/)) {
+          newStates[letter] = 'included';
+        }
+      });
+
+      // Remove letters that were in the old pattern but not in the new pattern
+      // (only if they were auto-included, not manually set)
+      previousPatternLetters.forEach(letter => {
+        if (!patternLetters.includes(letter) && letter.match(/[a-z]/)) {
+          // Only remove if it was auto-included (we can't perfectly detect this,
+          // but we'll remove it to keep things clean)
+          delete newStates[letter];
+        }
+      });
+
+      return newStates;
+    });
   };
 
   const handleLetterPress = (letter: string) => {
+    // Don't allow changing state of letters that are in the pattern
+    const patternLetters = pattern.replace(/\?/g, '').split('');
+    if (patternLetters.includes(letter)) {
+      return; // Exit early if letter is in pattern
+    }
+
     setLetterStates(prev => {
       const currentState = prev[letter] || 'normal';
       let newState: LetterState;
@@ -150,7 +185,14 @@ export default function WordleCheater() {
   };
 
   const getLetterStyle = (letter: string) => {
+    const patternLetters = pattern.replace(/\?/g, '').split('');
+    const isInPattern = patternLetters.includes(letter);
     const state = letterStates[letter] || 'normal';
+
+    if (isInPattern) {
+      return [styles.keyboardKey, styles.includedKey, styles.lockedKey];
+    }
+
     switch (state) {
       case 'excluded':
         return [styles.keyboardKey, styles.excludedKey];
@@ -222,58 +264,74 @@ export default function WordleCheater() {
                 ))}
               </View>
             </View>
+
+            <View style={styles.buttonRow}>
+              <TouchableOpacity style={styles.clearButton} onPress={clearAll}>
+                <RotateCcw size={16} color="#ef4444" />
+                <Text style={styles.clearButtonText}>Clear All</Text>
+              </TouchableOpacity>
+            </View>
           </View>
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Letter Status</Text>
-            <Text style={styles.hint}>
-              Tap once to exclude • Tap twice to include
-            </Text>
+          <View style={styles.divider} />
 
-            <View style={styles.keyboard}>
-              {QWERTY_ROWS.map((row, rowIndex) => (
-                <View key={rowIndex} style={styles.keyboardRow}>
-                  {row.map(letter => (
-                    <TouchableOpacity
-                      key={letter}
-                      style={getLetterStyle(letter)}
-                      onPress={() => handleLetterPress(letter)}
-                      activeOpacity={0.7}
-                    >
-                      <Text style={getLetterTextStyle(letter)}>
-                        {letter.toUpperCase()}
-                      </Text>
-                    </TouchableOpacity>
+          <View style={styles.inputGroupLast}>
+            <TouchableOpacity
+              style={styles.keyboardHeader}
+              onPress={() => setKeyboardExpanded(!keyboardExpanded)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.label}>Letter Status</Text>
+              {keyboardExpanded ? (
+                <ChevronUp size={20} color="#6b7280" />
+              ) : (
+                <ChevronDown size={20} color="#6b7280" />
+              )}
+            </TouchableOpacity>
+
+            {keyboardExpanded && (
+              <>
+                <Text style={styles.hint}>
+                  Tap once to exclude • Tap twice to include
+                </Text>
+
+                <View style={styles.keyboard}>
+                  {QWERTY_ROWS.map((row, rowIndex) => (
+                    <View key={rowIndex} style={styles.keyboardRow}>
+                      {row.map(letter => (
+                        <TouchableOpacity
+                          key={letter}
+                          style={getLetterStyle(letter)}
+                          onPress={() => handleLetterPress(letter)}
+                          activeOpacity={0.7}
+                        >
+                          <Text style={getLetterTextStyle(letter)}>
+                            {letter.toUpperCase()}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
                   ))}
                 </View>
-              ))}
-            </View>
 
-            <View style={styles.legendContainer}>
-              <View style={styles.legendItem}>
-                <View style={[styles.legendBox, styles.excludedKey]} />
-                <Text style={styles.legendText}>
-                  Excluded ({excludedLetters.length})
-                </Text>
-              </View>
-              <View style={styles.legendItem}>
-                <View style={[styles.legendBox, styles.includedKey]} />
-                <Text style={styles.legendText}>
-                  Included ({includedLetters.length})
-                </Text>
-              </View>
-            </View>
+                <View style={styles.legendContainer}>
+                  <View style={styles.legendItem}>
+                    <View style={[styles.legendBox, styles.excludedKey]} />
+                    <Text style={styles.legendText}>
+                      Excluded ({excludedLetters.length})
+                    </Text>
+                  </View>
+                  <View style={styles.legendItem}>
+                    <View style={[styles.legendBox, styles.includedKey]} />
+                    <Text style={styles.legendText}>
+                      Included ({includedLetters.length})
+                    </Text>
+                  </View>
+                </View>
+              </>
+            )}
           </View>
 
-          <View style={styles.buttonRow}>
-            <TouchableOpacity style={styles.clearButton} onPress={clearAll}>
-              <RotateCcw size={16} color="#ef4444" />
-              <Text style={styles.clearButtonText}>Clear All</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        <View style={styles.resultsSection}>
           <View style={styles.resultsHeader}>
             <Search size={20} color="#10b981" />
             <Text style={styles.resultsTitle}>
@@ -301,14 +359,12 @@ export default function WordleCheater() {
               </Text>
             </View>
           ) : (
-            <View style={styles.wordsContainer}>
-              <View style={styles.wordsGrid}>
-                {filteredWords.map((word, index) => (
-                  <TouchableOpacity key={index} style={styles.wordCard}>
-                    <Text style={styles.wordText}>{word.toUpperCase()}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
+            <View style={styles.wordsGrid}>
+              {filteredWords.map((word, index) => (
+                <TouchableOpacity key={index} style={styles.wordCard}>
+                  <Text style={styles.wordText}>{word.toUpperCase()}</Text>
+                </TouchableOpacity>
+              ))}
             </View>
           )}
         </View>
@@ -358,6 +414,20 @@ const styles = StyleSheet.create({
   },
   inputGroup: {
     marginBottom: 20,
+  },
+  inputGroupLast: {
+    marginBottom: 0,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#e5e7eb',
+    marginVertical: 16,
+  },
+  keyboardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
   },
   label: {
     fontSize: 16,
@@ -436,6 +506,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#ecfdf5',
     borderColor: '#86efac',
   },
+  lockedKey: {
+    borderColor: '#22c55e',
+    borderWidth: 3,
+    opacity: 0.9,
+  },
   keyText: {
     fontSize: 14,
     fontWeight: '600',
@@ -453,8 +528,6 @@ const styles = StyleSheet.create({
     gap: 20,
     marginTop: 12,
     paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#e5e7eb',
   },
   legendItem: {
     flexDirection: 'row',
@@ -491,16 +564,15 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: 14,
   },
-  resultsSection: {
-    margin: 16,
-    marginTop: 0,
-    paddingBottom: 20,
-  },
   resultsHeader: {
+    borderTopWidth: 1,
+    borderTopColor: '#e5e7eb',
     flexDirection: 'row',
     alignItems: 'center',
+    marginTop: 20,
     marginBottom: 12,
     gap: 8,
+    paddingTop: 20,
   },
   resultsTitle: {
     fontSize: 18,
@@ -523,9 +595,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#6b7280',
     textAlign: 'center',
-  },
-  wordsContainer: {
-    // Container for the words grid
   },
   wordsGrid: {
     flexDirection: 'row',

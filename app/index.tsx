@@ -267,73 +267,73 @@ export default function WordleCheater() {
 
             <View style={styles.buttonRow}>
               <TouchableOpacity style={styles.clearButton} onPress={clearAll}>
-                <RotateCcw size={16} color="#ef4444" />
+                <RotateCcw size={20} color="#FFFFFF" />
                 <Text style={styles.clearButtonText}>Clear All</Text>
               </TouchableOpacity>
             </View>
-          </View>
 
-          <View style={styles.divider} />
+            <View style={styles.divider} />
 
-          <View style={styles.inputGroupLast}>
-            <TouchableOpacity
-              style={styles.keyboardHeader}
-              onPress={() => setKeyboardExpanded(!keyboardExpanded)}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.label}>Letter Status</Text>
-              {keyboardExpanded ? (
-                <ChevronUp size={20} color="#6b7280" />
-              ) : (
-                <ChevronDown size={20} color="#6b7280" />
-              )}
-            </TouchableOpacity>
+            <View style={styles.inputGroupLast}>
+              <TouchableOpacity
+                style={styles.keyboardHeader}
+                onPress={() => setKeyboardExpanded(!keyboardExpanded)}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.label}>Letter Status</Text>
+                {keyboardExpanded ? (
+                  <ChevronUp size={24} color="#2d3748" />
+                ) : (
+                  <ChevronDown size={24} color="#2d3748" />
+                )}
+              </TouchableOpacity>
 
-            {keyboardExpanded && (
-              <>
-                <Text style={styles.hint}>
-                  Tap once to exclude • Tap twice to include
-                </Text>
+              {keyboardExpanded && (
+                <>
+                  <Text style={styles.hint}>
+                    Tap once to exclude • Tap twice to include
+                  </Text>
 
-                <View style={styles.keyboard}>
-                  {QWERTY_ROWS.map((row, rowIndex) => (
-                    <View key={rowIndex} style={styles.keyboardRow}>
-                      {row.map(letter => (
-                        <TouchableOpacity
-                          key={letter}
-                          style={getLetterStyle(letter)}
-                          onPress={() => handleLetterPress(letter)}
-                          activeOpacity={0.7}
-                        >
-                          <Text style={getLetterTextStyle(letter)}>
-                            {letter.toUpperCase()}
-                          </Text>
-                        </TouchableOpacity>
-                      ))}
+                  <View style={styles.keyboard}>
+                    {QWERTY_ROWS.map((row, rowIndex) => (
+                      <View key={rowIndex} style={styles.keyboardRow}>
+                        {row.map(letter => (
+                          <TouchableOpacity
+                            key={letter}
+                            style={getLetterStyle(letter)}
+                            onPress={() => handleLetterPress(letter)}
+                            activeOpacity={0.7}
+                          >
+                            <Text style={getLetterTextStyle(letter)}>
+                              {letter.toUpperCase()}
+                            </Text>
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                    ))}
+                  </View>
+
+                  <View style={styles.topLegendContainer}>
+                    <View style={styles.legendItem}>
+                      <View style={[styles.legendBox, styles.excludedKey]} />
+                      <Text style={styles.legendText}>
+                        Excluded ({excludedLetters.length})
+                      </Text>
                     </View>
-                  ))}
-                </View>
-
-                <View style={styles.legendContainer}>
-                  <View style={styles.legendItem}>
-                    <View style={[styles.legendBox, styles.excludedKey]} />
-                    <Text style={styles.legendText}>
-                      Excluded ({excludedLetters.length})
-                    </Text>
+                    <View style={styles.legendItem}>
+                      <View style={[styles.legendBox, styles.includedKey]} />
+                      <Text style={styles.legendText}>
+                        Included ({includedLetters.length})
+                      </Text>
+                    </View>
                   </View>
-                  <View style={styles.legendItem}>
-                    <View style={[styles.legendBox, styles.includedKey]} />
-                    <Text style={styles.legendText}>
-                      Included ({includedLetters.length})
-                    </Text>
-                  </View>
-                </View>
-              </>
-            )}
+                </>
+              )}
+            </View>
           </View>
 
           <View style={styles.resultsHeader}>
-            <Search size={20} color="#10b981" />
+            <Search size={24} color="#2d3748" />
             <Text style={styles.resultsTitle}>
               Possible Words ({filteredWords.length}
               {totalMatches > filteredWords.length && ` of ${totalMatches}`})
@@ -376,44 +376,39 @@ export default function WordleCheater() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
   },
   scrollContainer: {
     flex: 1,
   },
   header: {
     paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 10,
-    backgroundColor: '#ffffff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
+    paddingTop: 40,
+    paddingBottom: 20,
+    backgroundColor: '#6366f1',
   },
   title: {
     fontSize: 28,
-    fontWeight: '700',
-    color: '#1f2937',
+    fontWeight: '600',
+    color: '#ffffff',
     textAlign: 'center',
   },
   subtitle: {
     fontSize: 16,
-    color: '#6b7280',
+    color: '#e0e7ff',
     textAlign: 'center',
-    marginTop: 4,
+    marginTop: 8,
   },
   inputSection: {
     backgroundColor: '#ffffff',
-    margin: 16,
-    borderRadius: 16,
     padding: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
-    elevation: 4,
+    elevation: 3,
   },
   inputGroup: {
-    marginBottom: 20,
+    marginBottom: 24,
   },
   inputGroupLast: {
     marginBottom: 0,
@@ -421,38 +416,39 @@ const styles = StyleSheet.create({
   divider: {
     height: 1,
     backgroundColor: '#e5e7eb',
-    marginVertical: 16,
+    marginVertical: 20,
   },
   keyboardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: 16,
+    paddingVertical: 8,
   },
   label: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '600',
     color: '#374151',
-    marginBottom: 4,
-  },
-  hint: {
-    fontSize: 12,
-    color: '#6b7280',
     marginBottom: 8,
   },
+  hint: {
+    fontSize: 14,
+    color: '#6b7280',
+    marginBottom: 16,
+  },
   inputContainer: {
-    gap: 12,
+    gap: 16,
   },
   patternInput: {
     borderWidth: 2,
-    borderColor: '#e5e7eb',
-    borderRadius: 12,
+    borderColor: '#d1d5db',
+    borderRadius: 8,
     padding: 16,
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: '500',
     textAlign: 'center',
     backgroundColor: '#f9fafb',
-    letterSpacing: 2,
+    color: '#374151',
   },
   patternDisplay: {
     flexDirection: 'row',
@@ -460,8 +456,8 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   letterBox: {
-    width: 40,
-    height: 40,
+    width: 50,
+    height: 50,
     borderWidth: 2,
     borderColor: '#d1d5db',
     borderRadius: 8,
@@ -470,17 +466,16 @@ const styles = StyleSheet.create({
     backgroundColor: '#f9fafb',
   },
   letterBoxFilled: {
-    borderColor: '#10b981',
-    backgroundColor: '#ecfdf5',
+    borderColor: '#059669',
+    backgroundColor: '#d1fae5',
   },
   letterText: {
-    fontSize: 18,
-    fontWeight: '700',
+    fontSize: 20,
+    fontWeight: '600',
     color: '#374151',
-    textTransform: 'uppercase',
   },
   keyboard: {
-    gap: 6,
+    gap: 8,
   },
   keyboardRow: {
     flexDirection: 'row',
@@ -488,32 +483,32 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   keyboardKey: {
-    minWidth: 32,
-    height: 42,
-    borderRadius: 8,
+    minWidth: 36,
+    height: 44,
+    borderRadius: 6,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#f3f4f6',
-    borderWidth: 2,
-    borderColor: '#e5e7eb',
+    borderWidth: 1,
+    borderColor: '#d1d5db',
     paddingHorizontal: 8,
   },
   excludedKey: {
-    backgroundColor: '#fef2f2',
-    borderColor: '#fca5a5',
+    backgroundColor: '#fee2e2',
+    borderColor: '#dc2626',
   },
   includedKey: {
-    backgroundColor: '#ecfdf5',
-    borderColor: '#86efac',
+    backgroundColor: '#d1fae5',
+    borderColor: '#059669',
   },
   lockedKey: {
-    borderColor: '#22c55e',
-    borderWidth: 3,
-    opacity: 0.9,
+    borderColor: '#3b82f6',
+    borderWidth: 2,
+    backgroundColor: '#dbeafe',
   },
   keyText: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 16,
+    fontWeight: '500',
     color: '#374151',
   },
   excludedText: {
@@ -522,55 +517,56 @@ const styles = StyleSheet.create({
   includedText: {
     color: '#059669',
   },
-  legendContainer: {
+  topLegendContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: 20,
-    marginTop: 12,
-    paddingTop: 12,
+    gap: 24,
+    marginTop: 20,
+    paddingTop: 16,
   },
   legendItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 8,
   },
   legendBox: {
     width: 16,
     height: 16,
     borderRadius: 4,
     borderWidth: 1,
+    borderColor: '#d1d5db',
   },
   legendText: {
-    fontSize: 12,
+    fontSize: 14,
     color: '#6b7280',
     fontWeight: '500',
   },
   buttonRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: 10,
+    marginTop: 20,
   },
   clearButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
     borderRadius: 8,
-    backgroundColor: '#fef2f2',
-    gap: 6,
+    backgroundColor: '#ef4444',
+    gap: 8,
   },
   clearButtonText: {
-    color: '#ef4444',
+    color: '#ffffff',
     fontWeight: '600',
-    fontSize: 14,
+    fontSize: 16,
   },
   resultsHeader: {
     borderTopWidth: 1,
     borderTopColor: '#e5e7eb',
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 20,
-    marginBottom: 12,
+    marginTop: 0,
+    marginBottom: 16,
     gap: 8,
     paddingTop: 20,
   },
@@ -580,11 +576,15 @@ const styles = StyleSheet.create({
     color: '#374151',
   },
   truncationWarning: {
-    fontSize: 12,
-    color: '#f59e0b',
-    marginBottom: 12,
-    fontStyle: 'italic',
+    fontSize: 14,
+    color: '#d97706',
+    marginBottom: 16,
+    fontWeight: '500',
     textAlign: 'center',
+    backgroundColor: '#fef3c7',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 6,
   },
   emptyState: {
     justifyContent: 'center',
@@ -602,22 +602,18 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   wordCard: {
-    backgroundColor: '#ffffff',
+    backgroundColor: '#f8fafc',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: '#e5e7eb',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    minWidth: 70,
   },
   wordText: {
     fontSize: 16,
-    fontWeight: '700',
-    color: '#10b981',
-    letterSpacing: 1,
+    fontWeight: '500',
+    color: '#1e293b',
+    textAlign: 'center',
   },
 });

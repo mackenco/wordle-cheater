@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   StyleSheet,
   SafeAreaView,
   Alert,
+  Platform,
 } from 'react-native';
 import { Search, RotateCcw, ChevronDown, ChevronUp } from 'lucide-react-native';
 import { wordList } from '@/data/wordList';
@@ -28,6 +29,9 @@ export default function WordleCheater() {
   const [pattern, setPattern] = useState('');
   const [letterStates, setLetterStates] = useState<LetterStates>({});
   const [keyboardExpanded, setKeyboardExpanded] = useState(true);
+  const [selectedPosition, setSelectedPosition] = useState<number | null>(null);
+  const [hiddenInputValue, setHiddenInputValue] = useState('');
+  const hiddenInputRef = useRef<TextInput>(null);
 
   const excludedLetters = useMemo(() => {
     return Object.keys(letterStates)
@@ -45,7 +49,7 @@ export default function WordleCheater() {
     if (!pattern.trim()) return [];
 
     const patternRegex = new RegExp(
-      '^' + pattern.toLowerCase().replace(/\?/g, '[a-z]') + '$'
+      '^' + pattern.toLowerCase().replace(/[\?\s]/g, '[a-z]') + '$'
     );
 
     const excluded = excludedLetters
@@ -82,7 +86,7 @@ export default function WordleCheater() {
     if (!pattern.trim()) return 0;
 
     const patternRegex = new RegExp(
-      '^' + pattern.toLowerCase().replace(/\?/g, '[a-z]') + '$'
+      '^' + pattern.toLowerCase().replace(/[\?\s]/g, '[a-z]') + '$'
     );
     const excluded = excludedLetters
       .toLowerCase()
@@ -109,47 +113,110 @@ export default function WordleCheater() {
     setPattern('');
     setLetterStates({});
     setKeyboardExpanded(true); // Expand keyboard when clearing to help user start fresh
+    setSelectedPosition(null);
+    setHiddenInputValue('');
+    hiddenInputRef.current?.blur();
   };
 
-  const handlePatternChange = (text: string) => {
-    // Only allow letters and question marks, max 5 characters
-    const cleaned = text
+  const handleBoxPress = (position: number) => {
+    if (selectedPosition === position) {
+      // Tapping the same position again - clear it
+      const currentPattern = Array.from(
+        { length: 5 },
+        (_, i) => pattern[i] || ' '
+      );
+      const oldLetter = currentPattern[position];
+      currentPattern[position] = ' ';
+
+      // Convert back to string, keeping all positions
+      const newPatternString = currentPattern.join('');
+      setPattern(newPatternString);
+      setSelectedPosition(null);
+
+      // Remove the old letter from letter states if it was auto-included
+      if (
+        oldLetter &&
+        oldLetter !== '?' &&
+        oldLetter !== '' &&
+        oldLetter !== ' ' &&
+        oldLetter.match(/[a-z]/)
+      ) {
+        setLetterStates(prev => {
+          const newStates = { ...prev };
+          delete newStates[oldLetter];
+          return newStates;
+        });
+      }
+    } else {
+      // New position selected - show keyboard
+      setSelectedPosition(position);
+      setHiddenInputValue('');
+
+      if (Platform.OS === 'web') {
+        // On web, focus immediately without delay
+        hiddenInputRef.current?.focus();
+      } else {
+        // On mobile, use small delay
+        setTimeout(() => {
+          hiddenInputRef.current?.focus();
+        }, 100);
+      }
+    }
+  };
+
+  const handleHiddenInputChange = (text: string) => {
+    if (selectedPosition === null) return;
+
+    // Only allow letters, take the last character typed
+    const letter = text
       .toLowerCase()
-      .replace(/[^a-z?]/g, '')
-      .slice(0, 5);
-    setPattern(cleaned);
+      .replace(/[^a-z]/g, '')
+      .slice(-1);
 
-    // Auto-include letters from the pattern and clean up removed ones
-    const patternLetters = cleaned.replace(/\?/g, '').split('');
-    const previousPatternLetters = pattern.replace(/\?/g, '').split('');
+    if (letter) {
+      // Convert pattern to a proper 5-element array
+      const currentPattern = Array.from(
+        { length: 5 },
+        (_, i) => pattern[i] || ' '
+      );
+      const oldLetter = currentPattern[selectedPosition];
+      currentPattern[selectedPosition] = letter;
 
-    setLetterStates(prev => {
-      const newStates = { ...prev };
+      // Convert back to string, keeping all positions
+      const newPatternString = currentPattern.join('');
+      setPattern(newPatternString);
 
-      // Add new pattern letters as included
-      patternLetters.forEach(letter => {
-        if (letter.match(/[a-z]/)) {
-          newStates[letter] = 'included';
+      // Update letter states
+      setLetterStates(prev => {
+        const newStates = { ...prev };
+
+        // Remove old letter if it was auto-included
+        if (
+          oldLetter &&
+          oldLetter !== '?' &&
+          oldLetter !== '' &&
+          oldLetter !== ' ' &&
+          oldLetter.match(/[a-z]/)
+        ) {
+          delete newStates[oldLetter];
         }
+
+        // Add new letter as included
+        newStates[letter] = 'included';
+
+        return newStates;
       });
 
-      // Remove letters that were in the old pattern but not in the new pattern
-      // (only if they were auto-included, not manually set)
-      previousPatternLetters.forEach(letter => {
-        if (!patternLetters.includes(letter) && letter.match(/[a-z]/)) {
-          // Only remove if it was auto-included (we can't perfectly detect this,
-          // but we'll remove it to keep things clean)
-          delete newStates[letter];
-        }
-      });
-
-      return newStates;
-    });
+      // Hide keyboard and clear selection
+      setSelectedPosition(null);
+      hiddenInputRef.current?.blur();
+      setHiddenInputValue('');
+    }
   };
 
   const handleLetterPress = (letter: string) => {
     // Don't allow changing state of letters that are in the pattern
-    const patternLetters = pattern.replace(/\?/g, '').split('');
+    const patternLetters = pattern.replace(/[\?\s]/g, '').split('');
     if (patternLetters.includes(letter)) {
       return; // Exit early if letter is in pattern
     }
@@ -185,7 +252,7 @@ export default function WordleCheater() {
   };
 
   const getLetterStyle = (letter: string) => {
-    const patternLetters = pattern.replace(/\?/g, '').split('');
+    const patternLetters = pattern.replace(/[\?\s]/g, '').split('');
     const isInPattern = patternLetters.includes(letter);
     const state = letterStates[letter] || 'normal';
 
@@ -236,33 +303,55 @@ export default function WordleCheater() {
               Use ? for unknown letters (e.g., ?o??y)
             </Text>
             <View style={styles.inputContainer}>
-              <TextInput
-                style={styles.patternInput}
-                value={pattern}
-                onChangeText={handlePatternChange}
-                placeholder="?o??y"
-                placeholderTextColor="#9ca3af"
-                maxLength={5}
-                autoCapitalize="none"
-                autoCorrect={false}
-              />
+              {Platform.OS === 'web' && selectedPosition !== null && (
+                <Text style={styles.webInputHint}>
+                  Type a letter for position {selectedPosition + 1}
+                </Text>
+              )}
               <View style={styles.patternDisplay}>
                 {Array.from({ length: 5 }).map((_, index) => (
-                  <View
+                  <TouchableOpacity
                     key={index}
                     style={[
                       styles.letterBox,
                       pattern[index] &&
                         pattern[index] !== '?' &&
+                        pattern[index] !== ' ' &&
                         styles.letterBoxFilled,
+                      selectedPosition === index && styles.letterBoxSelected,
                     ]}
+                    onPress={() => handleBoxPress(index)}
+                    activeOpacity={0.7}
                   >
                     <Text style={styles.letterText}>
-                      {pattern[index] || '?'}
+                      {pattern[index] && pattern[index] !== ' '
+                        ? pattern[index]
+                        : '?'}
                     </Text>
-                  </View>
+                  </TouchableOpacity>
                 ))}
               </View>
+
+              {/* Hidden input for native keyboard */}
+              <TextInput
+                ref={hiddenInputRef}
+                style={[
+                  Platform.OS === 'web' ? styles.webInput : styles.hiddenInput,
+                  Platform.OS === 'web' &&
+                    selectedPosition === null &&
+                    styles.webInputHidden,
+                ]}
+                value={hiddenInputValue}
+                onChangeText={handleHiddenInputChange}
+                autoCapitalize="none"
+                autoCorrect={false}
+                onBlur={() => setSelectedPosition(null)}
+                placeholder={
+                  Platform.OS === 'web' && selectedPosition !== null
+                    ? 'Type letter...'
+                    : ''
+                }
+              />
             </View>
 
             <View style={styles.buttonRow}>
@@ -438,18 +527,39 @@ const styles = StyleSheet.create({
   },
   inputContainer: {
     gap: 16,
+    position: 'relative',
   },
-  patternInput: {
-    borderWidth: 2,
-    borderColor: '#d1d5db',
+  hiddenInput: {
+    position: 'absolute',
+    left: -9999,
+    opacity: 0,
+  },
+  webInput: {
+    position: 'absolute',
+    top: -50,
+    left: 0,
+    right: 0,
+    height: 40,
+    borderWidth: 1,
+    borderColor: '#3b82f6',
     borderRadius: 8,
-    padding: 16,
-    fontSize: 18,
-    fontWeight: '500',
-    textAlign: 'center',
-    backgroundColor: '#f9fafb',
-    color: '#374151',
+    backgroundColor: '#ffffff',
+    paddingHorizontal: 12,
+    fontSize: 16,
+    zIndex: 10,
   },
+  webInputHidden: {
+    opacity: 0,
+    pointerEvents: 'none',
+  },
+  webInputHint: {
+    fontSize: 14,
+    color: '#3b82f6',
+    textAlign: 'center',
+    marginBottom: 8,
+    fontWeight: '500',
+  },
+
   patternDisplay: {
     flexDirection: 'row',
     justifyContent: 'center',
@@ -468,6 +578,11 @@ const styles = StyleSheet.create({
   letterBoxFilled: {
     borderColor: '#059669',
     backgroundColor: '#d1fae5',
+  },
+  letterBoxSelected: {
+    borderColor: '#3b82f6',
+    backgroundColor: '#dbeafe',
+    borderWidth: 3,
   },
   letterText: {
     fontSize: 20,

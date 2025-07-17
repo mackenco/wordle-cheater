@@ -46,10 +46,16 @@ export default function WordleCheater() {
   }, [letterStates]);
 
   const filteredWords = useMemo(() => {
-    if (!pattern.trim()) return [];
+    // If no pattern but we have letter constraints, treat as ?????
+    const hasLetterConstraints =
+      excludedLetters.length > 0 || includedLetters.length > 0;
+    const effectivePattern =
+      !pattern.trim() && hasLetterConstraints ? '?????' : pattern;
+
+    if (!effectivePattern.trim()) return [];
 
     const patternRegex = new RegExp(
-      '^' + pattern.toLowerCase().replace(/[\?\s]/g, '[a-z]') + '$'
+      '^' + effectivePattern.toLowerCase().replace(/[\?\s]/g, '[a-z]') + '$'
     );
 
     const excluded = excludedLetters
@@ -83,10 +89,16 @@ export default function WordleCheater() {
   }, [pattern, excludedLetters, includedLetters]);
 
   const totalMatches = useMemo(() => {
-    if (!pattern.trim()) return 0;
+    // If no pattern but we have letter constraints, treat as ?????
+    const hasLetterConstraints =
+      excludedLetters.length > 0 || includedLetters.length > 0;
+    const effectivePattern =
+      !pattern.trim() && hasLetterConstraints ? '?????' : pattern;
+
+    if (!effectivePattern.trim()) return 0;
 
     const patternRegex = new RegExp(
-      '^' + pattern.toLowerCase().replace(/[\?\s]/g, '[a-z]') + '$'
+      '^' + effectivePattern.toLowerCase().replace(/[\?\s]/g, '[a-z]') + '$'
     );
     const excluded = excludedLetters
       .toLowerCase()

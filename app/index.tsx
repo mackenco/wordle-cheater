@@ -7,7 +7,6 @@ import {
   ScrollView,
   StyleSheet,
   SafeAreaView,
-  Alert,
   Platform,
 } from 'react-native';
 import { Search, RotateCcw, ChevronDown, ChevronUp } from 'lucide-react-native';
@@ -447,25 +446,27 @@ export default function WordleCheater() {
             </Text>
           )}
 
-          {pattern.length === 0 ? (
+          {includedLetters.length > 0 ? (
+            filteredWords.length === 0 ? (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyStateText}>
+                  No words found matching your criteria
+                </Text>
+              </View>
+            ) : (
+              <View style={styles.wordsGrid}>
+                {filteredWords.map((word, index) => (
+                  <TouchableOpacity key={index} style={styles.wordCard}>
+                    <Text style={styles.wordText}>{word.toUpperCase()}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )
+          ) : (
             <View style={styles.emptyState}>
               <Text style={styles.emptyStateText}>
                 Enter a word pattern to see possible matches
               </Text>
-            </View>
-          ) : filteredWords.length === 0 ? (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyStateText}>
-                No words found matching your criteria
-              </Text>
-            </View>
-          ) : (
-            <View style={styles.wordsGrid}>
-              {filteredWords.map((word, index) => (
-                <TouchableOpacity key={index} style={styles.wordCard}>
-                  <Text style={styles.wordText}>{word.toUpperCase()}</Text>
-                </TouchableOpacity>
-              ))}
             </View>
           )}
         </View>
